@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "es2017",
+    "lib": [
+      "es2017",
+      "dom"
+    ],
+    "declaration": true,
+    "declarationDir": "./dist/typings",
+    "outDir": "./dist",
+    "moduleResolution": "node",
+    "rootDir": "./src",
+    "watch": false,
+    "esModuleInterop": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
+  },
+  "include": [
+    "./src/**/*"
+  ],
+  "exclude": [
+    "environment.ts"
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "name": "hahamut.js",
+  "author": "llzsrt <pencil0325@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "request": "^2.88.0"
+  },
+  "devDependencies": {
+    "@types/node": "^10.12.19",
+    "@types/request": "^2.48.1"
+  }
+}
