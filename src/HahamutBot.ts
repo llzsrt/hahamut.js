@@ -1,9 +1,12 @@
+import { MessageFilter } from './MessageFilter';
 import { HahamutMessage } from './HahamutMessage';
 import { ReceivedData, Message } from './types/Message';
 import { EventEmitter } from 'events';
 import request from 'request';
 import https from 'https';
 import crypto from 'crypto';
+import { FilterMethod } from './emun/FilterMethod';
+import { isNullOrUndefined } from 'util';
 
 const HAHAMUT_API_HOST: string = "https://us-central1-hahamut-8888.cloudfunctions.net";
 
@@ -12,13 +15,31 @@ export class HahamutBot extends EventEmitter {
     private server: https.Server;
     private messagePushUrl: string;
     private imagePushUrl: string;
+    private prefix?: string;
+    private commands: {} = {};
+    private commandFilter: MessageFilter;
 
-    constructor(token: { accessToken: string, appSecret: string }, sslOptions: any) {
+    constructor(token: { accessToken: string, appSecret: string }, sslOptions: any, prefix?: string) {
         super();
 
         let self: HahamutBot = this;
 
         this.appSecret = token.appSecret;
+        this.prefix = prefix;
+
+        this.commandFilter = new MessageFilter({
+            content: prefix,
+            method: FilterMethod.StartsWith,
+            action: (message: HahamutMessage) => {
+                let args = message.text.split(" ");
+                args.splice(0,1);
+                if(!isNullOrUndefined(self.commands[args[0]])) {
+                    let tempCommand = self.commands[args[0]];
+                    args.splice(0, 1);
+                    tempCommand(message, ...args);
+                }
+            }
+        });
 
         this.messagePushUrl = "/messagePush?access_token=" + token.accessToken;
         this.imagePushUrl = "/ImgmessagePush?access_token=" + token.accessToken;
@@ -40,7 +61,16 @@ export class HahamutBot extends EventEmitter {
                         receivedData = null;
                     }
                     if (self.checkSignature(receivedData, request.headers['x-baha-data-signature'])) {
-                        self.emit("message", new HahamutMessage(self, receivedData.botid, receivedData.time, receivedData.messaging[0].sender_id, receivedData.messaging[0].message));
+                        let tempMessage = new HahamutMessage(self, receivedData.botid, receivedData.time, receivedData.messaging[0].sender_id, receivedData.messaging[0].message);
+
+                        if (!isNullOrUndefined(self.prefix)) {
+                            let isCommand = self.commandFilter.filter(tempMessage);
+                            if (!isCommand) {
+                                self.emit("message", tempMessage);
+                            }
+                        }else{
+                            self.emit("message", tempMessage);
+                        }
 
                         response.statusCode = 200;
                         response.end();
@@ -56,12 +86,12 @@ export class HahamutBot extends EventEmitter {
         });
     }
 
-    public boot(host: string, port: number) {
+    public boot(host: string="localhost", port: number=443) {
         this.server.listen(port, host);
         this.emit("ready");
     }
 
-    public async sendMessage(recipientID: string, message: Message) {
+    public sendMessage(recipientID: string, message: Message) {
         let bodyString = JSON.stringify({
             recipient: {
                 id: recipientID
@@ -74,6 +104,10 @@ export class HahamutBot extends EventEmitter {
             url: HAHAMUT_API_HOST + this.messagePushUrl,
             body: bodyString
         });
+    }
+
+    public addCommand(name: string, run: (...args: any[]) => void) {
+        this.commands[name] = run;
     }
 
     private checkSignature(body: any, signature: string): boolean {
