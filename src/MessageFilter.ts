@@ -25,14 +25,28 @@ export class MessageFilter {
 
             switch (this.method) {
                 case FilterMethod.StartsWith: {
-                    if (!message.text.startsWith(this.content.toString())) {
+                    if (Array.isArray(this.content)) {
                         flag = false;
+                        this.content.forEach(tmp => {
+                            if (message.text.startsWith(tmp)) {
+                                flag = true;
+                            }
+                        });
+                    } else {
+                        flag = message.text.startsWith(this.content.toString());
                     }
                     break;
                 }
                 case FilterMethod.EndsWith: {
-                    if (!message.text.endsWith(this.content.toString())) {
+                    if (Array.isArray(this.content)) {
                         flag = false;
+                        this.content.forEach(tmp => {
+                            if (message.text.endsWith(tmp)) {
+                                flag = true;
+                            }
+                        });
+                    } else {
+                        flag = message.text.endsWith(this.content.toString());
                     }
                     break;
                 }
