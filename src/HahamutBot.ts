@@ -33,10 +33,14 @@ export class HahamutBot extends EventEmitter {
             action: (message: HahamutMessage) => {
                 let args = message.text.split(" ");
                 args.splice(0,1);
-                if(!isNullOrUndefined(self.commands[args[0]])) {
-                    let tempCommand = self.commands[args[0]];
-                    args.splice(0, 1);
+                let command = isNullOrUndefined(args[0]) ? "default" : args[0];
+                args.splice(0, 1);
+
+                if (!isNullOrUndefined(self.commands[command])) {
+                    let tempCommand = self.commands[command];
                     tempCommand(message, ...args);
+                }else {
+                    console.log(`Command "${command}" is not defined.`);
                 }
             }
         });
@@ -107,7 +111,8 @@ export class HahamutBot extends EventEmitter {
     }
 
     public addCommand(name: string, run: (...args: any[]) => void) {
-        this.commands[name] = run;
+
+        this.commands[ name === "" ? "default" : name ] = run;
     }
 
     private checkSignature(body: any, signature: string): boolean {
