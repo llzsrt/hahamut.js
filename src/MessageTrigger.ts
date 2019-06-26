@@ -1,103 +1,120 @@
-import { FilterMethod } from './emun/FilterMethod';
 import { isNullOrUndefined } from 'util';
+
+import { MessageTriggerOperator } from './emun/MessageTriggerOperator';
 import { HahamutMessage } from './HahamutMessage';
 
-export class MessageFilter {
+export class MessageTrigger {
+    private flag: boolean = false;
+    private message: HahamutMessage;
 
-    public method: FilterMethod;
+    public operator: MessageTriggerOperator;
     public type: string = "text";
     public content: string | string[];
     public senderId?: string | string[];
     public excludeSenderId?: string | string[];
-    public action?: (...args: any[])=>void;
+    public action?: (...args: any[]) => Promise<any>;
 
-    constructor(option: { senderId?: string | string[], excludeSenderId?: string | string[], method: FilterMethod, content: string | string[], action?: (...args: any[]) => void}) {
+    constructor(option: { senderId?: string | string[], excludeSenderId?: string | string[], operator: MessageTriggerOperator, content: string | string[], action?: (...args: any[]) => Promise<any>}) {
         this.senderId = option.senderId;
         this.excludeSenderId = option.excludeSenderId;
-        this.method = option.method;
+        this.operator = option.operator;
         this.content = option.content;
         this.action = option.action;
     }
 
-    public filter(message: HahamutMessage, ...args: any[]): boolean {
-        if (this.checkSenderId(message.senderId)) {
-            let flag = true;
+    public check(message: HahamutMessage): boolean {
 
-            switch (this.method) {
-                case FilterMethod.StartsWith: {
+        this.flag = false;
+        if (this.checkSenderId(message.senderId)) {
+            switch (this.operator) {
+                case MessageTriggerOperator.StartsWith: {
                     if (Array.isArray(this.content)) {
-                        flag = false;
+                        this.flag = false;
                         this.content.forEach(tmp => {
                             if (message.text.startsWith(tmp)) {
-                                flag = true;
+                                this.flag = true;
                             }
                         });
                     } else {
-                        flag = message.text.startsWith(this.content.toString());
+                        this.flag = message.text.startsWith(this.content.toString());
                     }
                     break;
                 }
-                case FilterMethod.EndsWith: {
+                case MessageTriggerOperator.EndsWith: {
                     if (Array.isArray(this.content)) {
-                        flag = false;
+                        this.flag = false;
                         this.content.forEach(tmp => {
                             if (message.text.endsWith(tmp)) {
-                                flag = true;
+                                this.flag = true;
                             }
                         });
                     } else {
-                        flag = message.text.endsWith(this.content.toString());
+                        this.flag = message.text.endsWith(this.content.toString());
                     }
                     break;
                 }
-                case FilterMethod.Find: {
+                case MessageTriggerOperator.Contains: {
                     if(Array.isArray(this.content)) {
-                        flag = false;
+                        this.flag = false;
                         this.content.forEach(tmp => {
                             if(message.text.indexOf(tmp) != -1) {
-                                flag = true;
+                                this.flag = true;
                             }
                         });
                     } else {
-                        flag = message.text.indexOf(this.content.toString()) != -1;
+                        this.flag = message.text.indexOf(this.content.toString()) != -1;
                     }
                     break;
                 }
-                case FilterMethod.FindAnd: {
+                case MessageTriggerOperator.ContainsAll: {
                     if (Array.isArray(this.content)) {
                         this.content.forEach(tmp => {
                             if (message.text.indexOf(tmp) == -1) {
-                                flag = false;
+                                this.flag = false;
                             }
                         });
                     } else {
-                        flag = message.text.indexOf(this.content.toString()) != -1;
+                        this.flag = message.text.indexOf(this.content.toString()) != -1;
                     }
                     break;
                 }
-                case FilterMethod.Match: {
+                case MessageTriggerOperator.Match: {
                     if (Array.isArray(this.content)) {
-                        flag = false;
+                        this.flag = false;
                         this.content.forEach(tmp => {
                             if (message.text == tmp) {
-                                flag = true;
+                                this.flag = true;
                             }
                         });
                     }else {
-                        flag = message.text == this.content.toString();
+                        this.flag = message.text == this.content.toString();
                     }
                     break;
                 }
             }
-
-            if(flag) {
-                if (!isNullOrUndefined(this.action)) {
-                    this.action(message, ...args);
-                }
-                return true;
-            }
         }
-        return false;
+        return this.flag;
+    }
+
+    public async run(...args: any[]) {
+        return new Promise((resolve, reject) => {
+            if (!isNullOrUndefined(this.message)) {
+                if (this.flag) {
+                    try {
+                        resolve(this.action(this.message, ...args));
+                    } catch (error) {
+                        reject(error);
+                    }
+                }
+            }else {
+                reject();
+            }
+        });
+    }
+
+    public async checkAndRung(message: HahamutMessage, ...args: any[]) {
+        this.check(message);
+        return this.run(...args);
     }
 
     private checkSenderId(senderId: string): boolean {

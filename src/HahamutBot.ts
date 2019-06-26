@@ -1,12 +1,13 @@
-import { MessageFilter } from './MessageFilter';
+import https from 'https';
+import request from 'request';
+import crypto from 'crypto';
+import { EventEmitter } from 'events';
+import { isNullOrUndefined } from 'util';
+
+import { MessageTrigger } from './MessageTrigger';
 import { HahamutMessage } from './HahamutMessage';
 import { ReceivedData, Message } from './types/Message';
-import { EventEmitter } from 'events';
-import request from 'request';
-import https from 'https';
-import crypto from 'crypto';
-import { FilterMethod } from './emun/FilterMethod';
-import { isNullOrUndefined } from 'util';
+import { MessageTriggerOperator } from './emun/MessageTriggerOperator';
 
 const HAHAMUT_API_HOST: string = "https://us-central1-hahamut-8888.cloudfunctions.net";
 
@@ -17,7 +18,7 @@ export class HahamutBot extends EventEmitter {
     private imagePushUrl: string;
     private prefix?: string;
     private commands: {} = {};
-    private commandFilter: MessageFilter;
+    private commandTrigger: MessageTrigger;
 
     constructor(token: { accessToken: string, appSecret: string }, sslOptions: any, prefix?: string) {
         super();
@@ -27,23 +28,25 @@ export class HahamutBot extends EventEmitter {
         this.appSecret = token.appSecret;
         this.prefix = prefix;
 
-        this.commandFilter = new MessageFilter({
-            content: prefix,
-            method: FilterMethod.StartsWith,
-            action: (message: HahamutMessage) => {
-                let args = message.text.split(" ");
-                args.splice(0,1);
-                let command = isNullOrUndefined(args[0]) ? "default" : args[0];
-                args.splice(0, 1);
-
-                if (!isNullOrUndefined(self.commands[command])) {
-                    let tempCommand = self.commands[command];
-                    tempCommand(message, ...args);
-                }else {
-                    console.log(`Command "${command}" is not defined.`);
+        if(!isNullOrUndefined(prefix)) {
+            this.commandTrigger = new MessageTrigger({
+                content: prefix,
+                operator: MessageTriggerOperator.StartsWith,
+                action: async (message: HahamutMessage) => {
+                    let args = message.text.split(" ");
+                    args.splice(0,1);
+                    let command = isNullOrUndefined(args[0]) ? "default" : args[0];
+                    args.splice(0, 1);
+    
+                    if (!isNullOrUndefined(self.commands[command])) {
+                        const tempCommand: (...args: any[]) => Promise<any> = self.commands[command];
+                        await tempCommand(message, ...args);
+                    }else {
+                        console.log(`Command "${command}" is not defined.`);
+                    }
                 }
-            }
-        });
+            });
+        }
 
         this.messagePushUrl = "/messagePush?access_token=" + token.accessToken;
         this.imagePushUrl = "/ImgmessagePush?access_token=" + token.accessToken;
@@ -58,7 +61,7 @@ export class HahamutBot extends EventEmitter {
                 request.on('data', (chunk: any) => {
                     body += chunk;
                 });
-                request.on('end', () => {
+                request.on('end', async () => {
                     try {
                         receivedData = JSON.parse(body);
                     } catch (err) {
@@ -68,9 +71,10 @@ export class HahamutBot extends EventEmitter {
                         let tempMessage = new HahamutMessage(self, receivedData.botid, receivedData.time, receivedData.messaging[0].sender_id, receivedData.messaging[0].message);
 
                         if (!isNullOrUndefined(self.prefix)) {
-                            let isCommand = self.commandFilter.filter(tempMessage);
-                            if (!isCommand) {
+                            if (!self.commandTrigger.check(tempMessage)) {
                                 self.emit("message", tempMessage);
+                            } else {
+                                self.commandTrigger.run();
                             }
                         }else{
                             self.emit("message", tempMessage);
@@ -95,22 +99,33 @@ export class HahamutBot extends EventEmitter {
         this.emit("ready");
     }
 
-    public sendMessage(recipientID: string, message: Message) {
+    public async sendMessage(recipientId: string, message: Message) {
         let bodyString = JSON.stringify({
             recipient: {
-                id: recipientID
+                id: recipientId
             },
             message: message
         });
 
-        request.post({
-            headers: { 'Content-Type': 'application/json' },
-            url: HAHAMUT_API_HOST + this.messagePushUrl,
-            body: bodyString
+        return new Promise((resolve, reject) => {
+            request.post({
+                headers: { 'Content-Type': 'application/json' },
+                url: HAHAMUT_API_HOST + this.messagePushUrl,
+                body: bodyString
+            }, (err, response, body) => {
+                    if (err) return reject(err);
+                    try {
+                        resolve(body);
+                    } catch (e) {
+                        reject(e);
+                    }
+            });
         });
+
+        
     }
 
-    public addCommand(name: string, run: (...args: any[]) => void) {
+    public addCommand(name: string, run: (...args: any[]) => Promise<any>) {
 
         this.commands[ name === "" ? "default" : name ] = run;
     }

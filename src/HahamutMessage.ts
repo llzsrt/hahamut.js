@@ -26,11 +26,11 @@ export class HahamutMessage {
         }
     }
 
-    public say(text: string) {
+    public async say(text: string) {
         let temp: Message = {
             type: "text",
             text: text
         }
-        this.bot.sendMessage(this.senderId, temp);
+        return this.bot.sendMessage(this.senderId, temp);
     }
 }
