@@ -19,15 +19,16 @@ export class HahamutBot extends EventEmitter {
     private prefix?: string;
     private commands: {} = {};
     private commandTrigger: MessageTrigger;
+    private isCheckSignature: boolean;
 
-    constructor(token: { accessToken: string, appSecret: string }, sslOptions: any, prefix?: string) {
+    constructor(token: { accessToken: string, appSecret: string }, sslOptions: any, prefix?: string, isCheckSignature?: boolean) {
         super();
 
         let self: HahamutBot = this;
 
         this.appSecret = token.appSecret;
         this.prefix = prefix;
-
+        this.isCheckSignature = isNullOrUndefined(isCheckSignature) ? true : isCheckSignature;
         if(!isNullOrUndefined(prefix)) {
             this.commandTrigger = new MessageTrigger({
                 content: prefix,
@@ -67,7 +68,7 @@ export class HahamutBot extends EventEmitter {
                     } catch (err) {
                         receivedData = null;
                     }
-                    if (self.checkSignature(receivedData, request.headers['x-baha-data-signature'])) {
+                    if (self.checkSignature(receivedData, request.headers['x-baha-data-signature']) || this.isCheckSignature) {
                         let tempMessage = new HahamutMessage(self, receivedData.botid, receivedData.time, receivedData.messaging[0].sender_id, receivedData.messaging[0].message);
 
                         if (!isNullOrUndefined(self.prefix)) {
