@@ -23,7 +23,7 @@ export class MessageTrigger {
     }
 
     public check(message: HahamutMessage): boolean {
-
+        this.message = message;
         this.flag = false;
         if (this.checkSenderId(message.senderId)) {
             switch (this.operator) {
@@ -55,12 +55,7 @@ export class MessageTrigger {
                 }
                 case MessageTriggerOperator.Contains: {
                     if(Array.isArray(this.content)) {
-                        this.flag = false;
-                        this.content.forEach(tmp => {
-                            if(message.text.indexOf(tmp) != -1) {
-                                this.flag = true;
-                            }
-                        });
+                        this.flag = !!this.content.find(x => x === message.text);
                     } else {
                         this.flag = message.text.indexOf(this.content.toString()) != -1;
                     }
@@ -69,7 +64,7 @@ export class MessageTrigger {
                 case MessageTriggerOperator.ContainsAll: {
                     if (Array.isArray(this.content)) {
                         this.content.forEach(tmp => {
-                            if (message.text.indexOf(tmp) == -1) {
+                            if (message.text.indexOf(tmp) === -1) {
                                 this.flag = false;
                             }
                         });
@@ -82,12 +77,12 @@ export class MessageTrigger {
                     if (Array.isArray(this.content)) {
                         this.flag = false;
                         this.content.forEach(tmp => {
-                            if (message.text == tmp) {
+                            if (message.text === tmp) {
                                 this.flag = true;
                             }
                         });
                     }else {
-                        this.flag = message.text == this.content.toString();
+                        this.flag = message.text === this.content.toString();
                     }
                     break;
                 }
@@ -100,11 +95,9 @@ export class MessageTrigger {
         return new Promise((resolve, reject) => {
             if (!isNullOrUndefined(this.message)) {
                 if (this.flag) {
-                    try {
-                        resolve(this.action(this.message, ...args));
-                    } catch (error) {
-                        reject(error);
-                    }
+                    this.action(this.message, ...args)
+                        .then(() => resolve())
+                        .catch(error => reject(error));
                 }
             }else {
                 reject();

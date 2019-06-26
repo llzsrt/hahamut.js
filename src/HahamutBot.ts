@@ -65,8 +65,9 @@ export class HahamutBot extends EventEmitter {
                 request.on('end', async () => {
                     try {
                         receivedData = JSON.parse(body);
-                    } catch (err) {
+                    } catch (error) {
                         receivedData = null;
+                        console.log(error);
                     }
                     if (self.checkSignature(receivedData, request.headers['x-baha-data-signature']) || !this.isCheckSignature) {
                         let tempMessage = new HahamutMessage(self, receivedData.botid, receivedData.time, receivedData.messaging[0].sender_id, receivedData.messaging[0].message);
@@ -113,12 +114,12 @@ export class HahamutBot extends EventEmitter {
                 headers: { 'Content-Type': 'application/json' },
                 url: HAHAMUT_API_HOST + this.messagePushUrl,
                 body: bodyString
-            }, (err, response, body) => {
-                    if (err) return reject(err);
+            }, (error, response, body) => {
+                    if (error) reject(error);
                     try {
                         resolve(body);
-                    } catch (e) {
-                        reject(e);
+                    } catch (error) {
+                        reject(error);
                     }
             });
         });
