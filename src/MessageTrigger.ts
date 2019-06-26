@@ -55,7 +55,12 @@ export class MessageTrigger {
                 }
                 case MessageTriggerOperator.Contains: {
                     if(Array.isArray(this.content)) {
-                        this.flag = !!this.content.find(x => x === message.text);
+                        this.flag = false;
+                        this.content.forEach(tmp => {
+                            if (message.text.indexOf(tmp) != -1) {
+                                this.flag = true;
+                            }
+                        });
                     } else {
                         this.flag = message.text.indexOf(this.content.toString()) != -1;
                     }
