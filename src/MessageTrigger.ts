@@ -112,7 +112,7 @@ export class MessageTrigger {
         });
     }
 
-    public async checkAndRung(message: HahamutMessage, ...args: any[]) {
+    public async checkAndRun(message: HahamutMessage, ...args: any[]) {
         this.check(message);
         return this.run(...args);
     }
