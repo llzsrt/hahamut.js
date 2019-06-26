@@ -68,7 +68,7 @@ export class HahamutBot extends EventEmitter {
                     } catch (err) {
                         receivedData = null;
                     }
-                    if (self.checkSignature(receivedData, request.headers['x-baha-data-signature']) || this.isCheckSignature) {
+                    if (self.checkSignature(receivedData, request.headers['x-baha-data-signature']) || !this.isCheckSignature) {
                         let tempMessage = new HahamutMessage(self, receivedData.botid, receivedData.time, receivedData.messaging[0].sender_id, receivedData.messaging[0].message);
 
                         if (!isNullOrUndefined(self.prefix)) {
