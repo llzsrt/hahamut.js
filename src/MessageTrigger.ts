@@ -1,11 +1,11 @@
 import { isNullOrUndefined } from 'util';
 
 import { MessageTriggerOperator } from './emun/MessageTriggerOperator';
-import { HahamutMessage } from './HahamutMessage';
+import { ReceivedMessage } from './ReceivedMessage';
 
 export class MessageTrigger {
     private flag: boolean = false;
-    private message: HahamutMessage;
+    private message: ReceivedMessage;
 
     public operator: MessageTriggerOperator;
     public type: string = "text";
@@ -22,7 +22,7 @@ export class MessageTrigger {
         this.action = option.action;
     }
 
-    public check(message: HahamutMessage): boolean {
+    public check(message: ReceivedMessage): boolean {
         this.message = message;
         this.flag = false;
         if (this.checkSenderId(message.senderId)) {
@@ -110,7 +110,7 @@ export class MessageTrigger {
         });
     }
 
-    public async checkAndRun(message: HahamutMessage, ...args: any[]) {
+    public async checkAndRun(message: ReceivedMessage, ...args: any[]) {
         this.check(message);
         return this.run(...args);
     }

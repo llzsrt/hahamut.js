@@ -7,7 +7,7 @@ import { EventEmitter } from 'events';
 import { isNullOrUndefined } from 'util';
 
 import { MessageTrigger } from './MessageTrigger';
-import { HahamutMessage } from './HahamutMessage';
+import { ReceivedMessage } from './ReceivedMessage';
 import { ReceivedData } from './types/Received';
 import { TextMessage, StickerMessage, ImageMessage } from './types/Message';
 import { MessageTriggerOperator } from './emun/MessageTriggerOperator';
@@ -38,7 +38,7 @@ export class HahamutBot extends EventEmitter {
             this.commandTrigger = new MessageTrigger({
                 content: prefix,
                 operator: MessageTriggerOperator.StartsWith,
-                action: async (message: HahamutMessage) => {
+                action: async (message: ReceivedMessage) => {
                     const args = message.text.split(" ");
                     args.splice(0,1);
                     const command = isNullOrUndefined(args[0]) ? "default" : args[0];
@@ -79,7 +79,7 @@ export class HahamutBot extends EventEmitter {
                         console.log(error);
                     }
                     if (self.checkSignature(receivedData, request.headers['x-baha-data-signature']) || !this.isCheckSignature) {
-                        let tempMessage = new HahamutMessage(self, receivedData.botid, receivedData.time, receivedData.messaging[0].sender_id, receivedData.messaging[0].message);
+                        let tempMessage = new ReceivedMessage(self, receivedData.botid, receivedData.time, receivedData.messaging[0].sender_id, receivedData.messaging[0].message);
 
                         if (!isNullOrUndefined(self.prefix)) {
                             if (!self.commandTrigger.check(tempMessage)) {
