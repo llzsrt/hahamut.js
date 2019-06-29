@@ -63,7 +63,7 @@ export class HahamutBot extends EventEmitter {
                 request.on('data', (chunk: any) => {
                     body += chunk;
                 });
-                request.on('end', async () => {
+                request.on('end', () => {
                     try {
                         receivedData = JSON.parse(body);
                     } catch (error) {
