@@ -1,3 +1,4 @@
+import fs from 'fs';
 import https from 'https';
 import http from 'http';
 import request from 'request';
@@ -7,7 +8,8 @@ import { isNullOrUndefined } from 'util';
 
 import { MessageTrigger } from './MessageTrigger';
 import { HahamutMessage } from './HahamutMessage';
-import { ReceivedData, Message } from './types/Message';
+import { ReceivedData } from './types/Received';
+import { TextMessage, StickerMessage, ImageMessage } from './types/Message';
 import { MessageTriggerOperator } from './emun/MessageTriggerOperator';
 
 const HAHAMUT_API_HOST: string = "https://us-central1-hahamut-8888.cloudfunctions.net";
@@ -18,17 +20,19 @@ export class HahamutBot extends EventEmitter {
     private messagePushUrl: string;
     private imagePushUrl: string;
     private prefix?: string;
+    private botId: string;
     private commands: {} = {};
     private commandTrigger: MessageTrigger;
     private isCheckSignature: boolean;
 
-    constructor(token: { accessToken: string, appSecret: string }, sslOptions?: any, prefix?: string, isCheckSignature?: boolean) {
+    constructor(config: { botId: string, accessToken: string, appSecret: string }, sslOptions?: any, prefix?: string, isCheckSignature?: boolean) {
         super();
 
         const self: HahamutBot = this;
 
-        this.appSecret = token.appSecret;
+        this.appSecret = config.appSecret;
         this.prefix = prefix;
+        this.botId = this.botId;
         this.isCheckSignature = isNullOrUndefined(isCheckSignature) ? true : isCheckSignature;
         if(!isNullOrUndefined(prefix)) {
             this.commandTrigger = new MessageTrigger({
@@ -50,8 +54,8 @@ export class HahamutBot extends EventEmitter {
             });
         }
 
-        this.messagePushUrl = "/messagePush?access_token=" + token.accessToken;
-        this.imagePushUrl = "/ImgmessagePush?access_token=" + token.accessToken;
+        this.messagePushUrl = "/messagePush?access_token=" + config.accessToken;
+        this.imagePushUrl = "/imagePush?bot_id=" + this.botId + "&access_token=" + config.accessToken;
         
         if (isNullOrUndefined(sslOptions)) {
             this.server = https.createServer(sslOptions);
@@ -106,8 +110,8 @@ export class HahamutBot extends EventEmitter {
         this.emit("ready");
     }
 
-    public async sendMessage(recipientId: string, message: Message) {
-        let bodyString = JSON.stringify({
+    public sendMessage(recipientId: string, message: TextMessage | StickerMessage | ImageMessage): Promise<string> {
+        const bodyString = JSON.stringify({
             recipient: {
                 id: recipientId
             },
@@ -120,21 +124,57 @@ export class HahamutBot extends EventEmitter {
                 url: HAHAMUT_API_HOST + this.messagePushUrl,
                 body: bodyString
             }, (error, response, body) => {
-                    if (error) reject(error);
-                    try {
+                    if (error) return reject(error);
+                    if (body === 'get data~~') {
                         resolve(body);
-                    } catch (error) {
-                        reject(error);
+                    }else {
+                        reject(body);
                     }
             });
         });
-
-        
     }
 
     public addCommand(name: string, run: (...args: any[]) => Promise<any>) {
 
         this.commands[ name === "" ? "default" : name ] = run;
+    }
+
+    public uploadImage(imageUrl: string): Promise<ImageMessage>
+    public uploadImage(imageFile: fs.ReadStream): Promise<ImageMessage>
+    public uploadImage(imageData: fs.ReadStream | string): Promise<ImageMessage> {
+        return new Promise((resolve, reject) => {
+
+            try {
+                if (typeof (imageData) === 'string') imageData = fs.createReadStream(imageData);
+            } catch(error) {
+                return reject(error);
+            }
+
+            const formData = {
+                filedata: imageData
+            };
+
+            request.post({
+                headers: { 'Content-Type': 'multipart/form-data' },
+                url: HAHAMUT_API_HOST + this.imagePushUrl,
+                formData: formData
+            }, (error, response, body) => {
+                if (error) return reject(error);
+                try {
+                    const temp = JSON.parse(body);
+                    const result: ImageMessage = {
+                        type: 'img',
+                        id: temp.id,
+                        ext: temp.ext,
+                        width: temp.width,
+                        height: temp.height
+                    };
+                    resolve(result);
+                } catch {
+                    reject(body);
+                }
+            });
+        });
     }
 
     private checkSignature(body: any, signature: string): boolean {

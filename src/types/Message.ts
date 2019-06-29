@@ -1,26 +1,18 @@
-export type ReceivedData = {
-    botid: string;
-    time: number;
-    messaging: [
-        {
-            sender_id: string;
-            message: ReceivedTextMessage | ReceivedStickerMessage;
-        }
-    ];
+export type TextMessage = {
+    type: string;
+    text: string;
 }
 
-export type ReceivedStickerMessage = {
+export type StickerMessage = {
+    type: string;
     sticker_group: string;
     sticker_id: string;
 }
 
-export type ReceivedTextMessage = {
-    text: string;
-}
-
-export type Message = {
-    type: string;
-    text?: string;
-    sticker_group?: string;
-    sticker_id?: string;
+export type ImageMessage = {
+    type: string,
+    id: string,
+    ext: string,
+    width: number,
+    height: number
 }

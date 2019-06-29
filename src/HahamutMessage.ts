@@ -1,5 +1,6 @@
 import { HahamutBot } from './HahamutBot';
-import { Message, ReceivedTextMessage, ReceivedStickerMessage } from "./types/Message";
+import { ReceivedTextMessage, ReceivedStickerMessage } from "./types/Received";
+import { TextMessage } from "./types/Message";
 import { isNullOrUndefined } from 'util';
 
 export class HahamutMessage {
@@ -26,8 +27,8 @@ export class HahamutMessage {
         }
     }
 
-    public async say(text: string) {
-        let temp: Message = {
+    public say(text: string): Promise<string> {
+        let temp: TextMessage = {
             type: "text",
             text: text
         }
