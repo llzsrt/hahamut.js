@@ -17,10 +17,10 @@ export class MessageTrigger {
     constructor(option: { senderId?: string | string[], excludeSenderId?: string | string[], operator: MessageTriggerOperator, content: string | string[], action?: (...args: any[]) => Promise<any>})
     constructor(operatorOrOption: MessageTriggerOperator | { operator: MessageTriggerOperator, content: string | string[], action?: (...args: any[]) => Promise<any>, senderId?: string | string[], excludeSenderId?: string | string[]}, content?: string | string[], action?: (...args: any[]) => Promise<any>, senderId?: string | string[], excludeSenderId?: string | string[]) {
         this.operator = typeof operatorOrOption === 'object' ? operatorOrOption.operator : operatorOrOption;
-        this.content = typeof operatorOrOption === 'object'? operatorOrOption.content : content;
-        this.action = typeof operatorOrOption === 'object'? operatorOrOption.action : action;
-        this.senderId = typeof operatorOrOption === 'object'? operatorOrOption.senderId : senderId;
-        this.excludeSenderId = typeof operatorOrOption === 'object'? operatorOrOption.excludeSenderId : excludeSenderId;
+        this.content = typeof operatorOrOption === 'object' ? operatorOrOption.content : content;
+        this.action = typeof operatorOrOption === 'object' ? operatorOrOption.action : action;
+        this.senderId = typeof operatorOrOption === 'object' ? operatorOrOption.senderId : senderId;
+        this.excludeSenderId = typeof operatorOrOption === 'object' ? operatorOrOption.excludeSenderId : excludeSenderId;
     }
 
     public check(message: ReceivedMessage): boolean {
