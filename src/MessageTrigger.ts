@@ -8,18 +8,19 @@ export class MessageTrigger {
     private message: ReceivedMessage;
 
     public operator: MessageTriggerOperator;
-    public type: string = "text";
     public content: string | string[];
     public senderId?: string | string[];
     public excludeSenderId?: string | string[];
     public action?: (...args: any[]) => Promise<any>;
 
-    constructor(option: { senderId?: string | string[], excludeSenderId?: string | string[], operator: MessageTriggerOperator, content: string | string[], action?: (...args: any[]) => Promise<any>}) {
-        this.senderId = option.senderId;
-        this.excludeSenderId = option.excludeSenderId;
-        this.operator = option.operator;
-        this.content = option.content;
-        this.action = option.action;
+    constructor(operator: MessageTriggerOperator, content: string | string[], action?: (...args: any[]) => Promise<any>, senderId?: string | string[], excludeSenderId?: string | string[])
+    constructor(option: { senderId?: string | string[], excludeSenderId?: string | string[], operator: MessageTriggerOperator, content: string | string[], action?: (...args: any[]) => Promise<any>})
+    constructor(operatorOrOption: MessageTriggerOperator | { operator: MessageTriggerOperator, content: string | string[], action?: (...args: any[]) => Promise<any>, senderId?: string | string[], excludeSenderId?: string | string[]}, content?: string | string[], action?: (...args: any[]) => Promise<any>, senderId?: string | string[], excludeSenderId?: string | string[]) {
+        this.operator = typeof operatorOrOption === 'object' ? operatorOrOption.operator : operatorOrOption;
+        this.content = typeof operatorOrOption === 'object'? operatorOrOption.content : content;
+        this.action = typeof operatorOrOption === 'object'? operatorOrOption.action : action;
+        this.senderId = typeof operatorOrOption === 'object'? operatorOrOption.senderId : senderId;
+        this.excludeSenderId = typeof operatorOrOption === 'object'? operatorOrOption.excludeSenderId : excludeSenderId;
     }
 
     public check(message: ReceivedMessage): boolean {
