@@ -118,22 +118,18 @@ export class MessageTrigger {
     private checkSenderId(senderId: string): boolean {
         if (!isNullOrUndefined(this.senderId)) {
             if (Array.isArray(this.senderId)) {
-                if (senderId in this.senderId) {
-                    return true;
-                } else {
+                if (!this.senderId.filter(x => x === senderId).length) {
                     return false;
                 }
             } else {
-                if (senderId == this.senderId) {
-                    return true;
-                } else {
+                if (senderId != this.senderId) {
                     return false;
                 }
             }
         }
         if (!isNullOrUndefined(this.excludeSenderId)) {
             if (Array.isArray(this.excludeSenderId)) {
-                if (senderId in this.excludeSenderId) {
+                if (!!this.excludeSenderId.filter(x => x === senderId).length) {
                     return false;
                 }
             } else {
