@@ -1,4 +1,5 @@
 import https from 'https';
+import http from 'http';
 import request from 'request';
 import crypto from 'crypto';
 import { EventEmitter } from 'events';
@@ -13,7 +14,7 @@ const HAHAMUT_API_HOST: string = "https://us-central1-hahamut-8888.cloudfunction
 
 export class HahamutBot extends EventEmitter {
     private appSecret: string;
-    private server: https.Server;
+    private server: https.Server | http.Server;
     private messagePushUrl: string;
     private imagePushUrl: string;
     private prefix?: string;
@@ -21,10 +22,10 @@ export class HahamutBot extends EventEmitter {
     private commandTrigger: MessageTrigger;
     private isCheckSignature: boolean;
 
-    constructor(token: { accessToken: string, appSecret: string }, sslOptions: any, prefix?: string, isCheckSignature?: boolean) {
+    constructor(token: { accessToken: string, appSecret: string }, sslOptions?: any, prefix?: string, isCheckSignature?: boolean) {
         super();
 
-        let self: HahamutBot = this;
+        const self: HahamutBot = this;
 
         this.appSecret = token.appSecret;
         this.prefix = prefix;
@@ -34,14 +35,14 @@ export class HahamutBot extends EventEmitter {
                 content: prefix,
                 operator: MessageTriggerOperator.StartsWith,
                 action: async (message: HahamutMessage) => {
-                    let args = message.text.split(" ");
+                    const args = message.text.split(" ");
                     args.splice(0,1);
-                    let command = isNullOrUndefined(args[0]) ? "default" : args[0];
+                    const command = isNullOrUndefined(args[0]) ? "default" : args[0];
                     args.splice(0, 1);
     
                     if (!isNullOrUndefined(self.commands[command])) {
                         const tempCommand: (...args: any[]) => Promise<any> = self.commands[command];
-                        await tempCommand(message, ...args);
+                        return tempCommand(message, ...args);
                     }else {
                         console.log(`Command "${command}" is not defined.`);
                     }
@@ -52,7 +53,11 @@ export class HahamutBot extends EventEmitter {
         this.messagePushUrl = "/messagePush?access_token=" + token.accessToken;
         this.imagePushUrl = "/ImgmessagePush?access_token=" + token.accessToken;
         
-        this.server = https.createServer(sslOptions);
+        if (isNullOrUndefined(sslOptions)) {
+            this.server = https.createServer(sslOptions);
+        } else {
+            this.server = http.createServer();
+        }
         this.server.on("request", (request, response) => {
             if (request.method === 'POST') {
 

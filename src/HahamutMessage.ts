@@ -12,7 +12,7 @@ export class HahamutMessage {
 
     private bot: HahamutBot;
 
-    constructor(bot: HahamutBot, botId: string, time: number,senderId: string, message: any) {
+    constructor(bot: HahamutBot, botId: string, time: number, senderId: string, message: any) {
         this.bot = bot;
         this.botId = botId;
         this.time = time;
@@ -21,7 +21,7 @@ export class HahamutMessage {
         this.message = message;
         if (isNullOrUndefined(message.text)) {
             this.text = "(sticker)";
-        }else {
+        } else {
             this.text = message.text;
         }
     }
