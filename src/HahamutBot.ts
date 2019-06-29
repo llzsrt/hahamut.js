@@ -1,6 +1,5 @@
 import fs from 'fs';
 import https from 'https';
-import http from 'http';
 import request from 'request';
 import crypto from 'crypto';
 import { EventEmitter } from 'events';
@@ -12,18 +11,16 @@ import { ReceivedData } from './types/Received';
 import { TextMessage, StickerMessage, ImageMessage } from './types/Message';
 import { MessageTriggerOperator } from './emun/MessageTriggerOperator';
 
-const HAHAMUT_API_HOST: string = "https://us-central1-hahamut-8888.cloudfunctions.net";
+const HAHAMUT_API_HOST: string = 'https://us-central1-hahamut-8888.cloudfunctions.net';
 
 export class HahamutBot extends EventEmitter {
+    public prefix?: string;
     private appSecret: string;
-    private server: https.Server | http.Server;
+    private server: https.Server;
     private messagePushUrl: string;
     private imagePushUrl: string;
-    private prefix?: string;
-    private botId: string;
     private commands: {} = {};
     private commandTrigger: MessageTrigger;
-    private isCheckSignature: boolean;
 
     constructor(config: { botId: string, accessToken: string, appSecret: string }, sslOptions?: any, prefix?: string, isCheckSignature?: boolean) {
         super();
@@ -31,17 +28,16 @@ export class HahamutBot extends EventEmitter {
         const self: HahamutBot = this;
 
         this.appSecret = config.appSecret;
-        this.prefix = prefix;
-        this.botId = this.botId;
-        this.isCheckSignature = isNullOrUndefined(isCheckSignature) ? true : isCheckSignature;
+        isCheckSignature = isNullOrUndefined(isCheckSignature) ? true : isCheckSignature;
         if(!isNullOrUndefined(prefix)) {
+            this.prefix = prefix;
             this.commandTrigger = new MessageTrigger({
-                content: prefix,
+                content: this.prefix,
                 operator: MessageTriggerOperator.StartsWith,
                 action: async (message: ReceivedMessage) => {
-                    const args = message.text.split(" ");
+                    const args = message.text.split(' ');
                     args.splice(0,1);
-                    const command = isNullOrUndefined(args[0]) ? "default" : args[0];
+                    const command = isNullOrUndefined(args[0]) ? 'default' : args[0];
                     args.splice(0, 1);
     
                     if (!isNullOrUndefined(self.commands[command])) {
@@ -54,15 +50,11 @@ export class HahamutBot extends EventEmitter {
             });
         }
 
-        this.messagePushUrl = "/messagePush?access_token=" + config.accessToken;
-        this.imagePushUrl = "/imagePush?bot_id=" + this.botId + "&access_token=" + config.accessToken;
+        this.messagePushUrl = `/messagePush?access_token=${config.accessToken}`;
+        this.imagePushUrl = `/imagePush?bot_id=${config.botId}&access_token=${config.accessToken}`;
         
-        if (isNullOrUndefined(sslOptions)) {
-            this.server = https.createServer(sslOptions);
-        } else {
-            this.server = http.createServer();
-        }
-        this.server.on("request", (request, response) => {
+        this.server = https.createServer(sslOptions);
+        this.server.on('request', (request, response) => {
             if (request.method === 'POST') {
 
                 let body: string = '';
@@ -78,17 +70,17 @@ export class HahamutBot extends EventEmitter {
                         receivedData = null;
                         console.log(error);
                     }
-                    if (self.checkSignature(receivedData, request.headers['x-baha-data-signature']) || !this.isCheckSignature) {
+                    if (self.checkSignature(receivedData, request.headers['x-baha-data-signature']) || !isCheckSignature) {
                         let tempMessage = new ReceivedMessage(self, receivedData.botid, receivedData.time, receivedData.messaging[0].sender_id, receivedData.messaging[0].message);
 
                         if (!isNullOrUndefined(self.prefix)) {
                             if (!self.commandTrigger.check(tempMessage)) {
-                                self.emit("message", tempMessage);
+                                self.emit('message', tempMessage);
                             } else {
                                 self.commandTrigger.run();
                             }
                         }else{
-                            self.emit("message", tempMessage);
+                            self.emit('message', tempMessage);
                         }
 
                         response.statusCode = 200;
@@ -105,9 +97,9 @@ export class HahamutBot extends EventEmitter {
         });
     }
 
-    public boot(host: string="localhost", port: number=443) {
+    public boot(host: string='localhost', port: number=443) {
         this.server.listen(port, host);
-        this.emit("ready");
+        this.emit('ready');
     }
 
     public sendMessage(recipientId: string, message: TextMessage | StickerMessage | ImageMessage): Promise<string> {
@@ -136,7 +128,7 @@ export class HahamutBot extends EventEmitter {
 
     public addCommand(name: string, run: (...args: any[]) => Promise<any>) {
 
-        this.commands[ name === "" ? "default" : name ] = run;
+        this.commands[name === '' ? 'default' : name ] = run;
     }
 
     public uploadImage(imageUrl: string): Promise<ImageMessage>
@@ -180,7 +172,7 @@ export class HahamutBot extends EventEmitter {
     private checkSignature(body: any, signature: string): boolean {
 
         let hmac = crypto.createHmac('sha1', this.appSecret);
-        hmac.update(JSON.stringify(body), "utf8");
+        hmac.update(JSON.stringify(body), 'utf8');
         let expectedSignature = 'sha1=' + hmac.digest('hex');
 
         if (signature != expectedSignature) {

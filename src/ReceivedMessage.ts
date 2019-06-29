@@ -1,7 +1,8 @@
+import { isNullOrUndefined } from 'util';
+
 import { HahamutBot } from './HahamutBot';
 import { ReceivedTextMessage } from './types/Received';
 import { TextMessage, StickerMessage, ImageMessage } from './types/Message';
-import { isNullOrUndefined } from 'util';
 
 export class ReceivedMessage {
     public botId: string;
