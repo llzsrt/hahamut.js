@@ -96,7 +96,7 @@ export class MessageTrigger {
         return this.flag;
     }
 
-    public async run(...args: any[]) {
+    public run(...args: any[]): Promise<void> {
         return new Promise((resolve, reject) => {
             if (!isNullOrUndefined(this.message)) {
                 if (this.flag) {
@@ -110,7 +110,7 @@ export class MessageTrigger {
         });
     }
 
-    public async checkAndRun(message: ReceivedMessage, ...args: any[]) {
+    public checkAndRun(message: ReceivedMessage, ...args: any[]): Promise<void> {
         this.check(message);
         return this.run(...args);
     }
