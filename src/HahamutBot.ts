@@ -104,8 +104,12 @@ export class HahamutBot extends EventEmitter {
     }
 
     public boot(host: string='localhost', port: number=443) {
-        this.server.listen(port, host);
-        this.emit('ready');
+        try {
+            this.server.listen(port, host);
+            this.emit('ready');
+        } catch (error) {
+            throw error;
+        }
     }
 
     public sendMessage(recipientId: string, message: TextMessage | StickerMessage | ImageMessage | BotStartMessage | BotEventMessage): Promise<string> {
