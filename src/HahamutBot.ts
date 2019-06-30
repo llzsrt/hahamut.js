@@ -5,6 +5,7 @@ import request from 'request';
 import crypto from 'crypto';
 import { EventEmitter } from 'events';
 import { isNullOrUndefined } from 'util';
+import { ListenOptions } from 'net';
 
 import { MessageTrigger } from './MessageTrigger';
 import { ReceivedMessage } from './ReceivedMessage';
@@ -103,8 +104,16 @@ export class HahamutBot extends EventEmitter {
         });
     }
 
-    public boot(port?: number, host?: string)
-    public boot(path?: string)
+    
+    boot(port?: number, hostname?: string, backlog?: number, listeningListener?: Function)
+    boot(port?: number, hostname?: string, listeningListener?: Function)
+    boot(port?: number, backlog?: number, listeningListener?: Function)
+    boot(port?: number, listeningListener?: Function)
+    boot(path: string, backlog?: number, listeningListener?: Function)
+    boot(path: string, listeningListener?: Function)
+    boot(options: ListenOptions, listeningListener?: Function)
+    boot(handle: any, backlog?: number, listeningListener?: Function)
+    boot(handle: any, listeningListener?: Function)
     public boot(...args) {
         try {
             this.server.listen(...args);
