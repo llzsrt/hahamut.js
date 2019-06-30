@@ -9,7 +9,7 @@ import { isNullOrUndefined } from 'util';
 import { MessageTrigger } from './MessageTrigger';
 import { ReceivedMessage } from './ReceivedMessage';
 import { ReceivedData } from './types/Received';
-import { TextMessage, StickerMessage, ImageMessage } from './types/Message';
+import { TextMessage, StickerMessage, ImageMessage, BotStartMessage, BotEventMessage } from './types/Message';
 import { TriggerOperator } from './enums/TriggerOperator';
 
 const HAHAMUT_API_HOST: string = 'https://us-central1-hahamut-8888.cloudfunctions.net';
@@ -108,7 +108,7 @@ export class HahamutBot extends EventEmitter {
         this.emit('ready');
     }
 
-    public sendMessage(recipientId: string, message: TextMessage | StickerMessage | ImageMessage): Promise<string> {
+    public sendMessage(recipientId: string, message: TextMessage | StickerMessage | ImageMessage | BotStartMessage | BotEventMessage): Promise<string> {
         const bodyString = JSON.stringify({
             recipient: {
                 id: recipientId

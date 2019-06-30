@@ -1,4 +1,5 @@
 export * from './HahamutBot';
+export * from './HahamutEvent';
 export * from './ReceivedMessage';
 export * from './MessageTrigger';
 export * from './enums';
