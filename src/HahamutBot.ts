@@ -17,6 +17,7 @@ const HAHAMUT_API_HOST: string = 'https://us-central1-hahamut-8888.cloudfunction
 
 export class HahamutBot extends EventEmitter {
     public prefix?: string;
+    private isCheckSignature: boolean;
     private appSecret: string;
     private server: https.Server | http.Server;
     private messagePushUrl: string;
@@ -24,28 +25,28 @@ export class HahamutBot extends EventEmitter {
     private commands: {} = {};
     private commandTrigger: MessageTrigger;
 
-    constructor(configs: { botId: string, accessToken: string, appSecret: string }, sslOptions?: any, prefix?: string, isCheckSignature?: boolean) {
+    constructor(configs: { botId: string, accessToken: string, appSecret: string, prefix?: string, isCheckSignature?: boolean }, sslOptions?: any) {
         super();
 
         const self: HahamutBot = this;
 
         this.appSecret = configs.appSecret;
-        isCheckSignature = isNullOrUndefined(isCheckSignature) ? true : isCheckSignature;
-        if(!isNullOrUndefined(prefix)) {
-            this.prefix = prefix;
+        this.isCheckSignature = isNullOrUndefined(configs.isCheckSignature) ? true : configs.isCheckSignature;
+        if (!isNullOrUndefined(configs.prefix)) {
+            this.prefix = configs.prefix;
             this.commandTrigger = new MessageTrigger({
                 content: this.prefix,
                 operator: TriggerOperator.StartsWith,
                 action: async (message: ReceivedMessage) => {
                     const args = message.text.split(' ');
-                    args.splice(0,1);
+                    args.splice(0, 1);
                     const command = isNullOrUndefined(args[0]) ? 'default' : args[0];
                     args.splice(0, 1);
-    
+
                     if (!isNullOrUndefined(self.commands[command])) {
                         const tempCommand: (...args: any[]) => Promise<any> = self.commands[command];
                         return tempCommand(message, ...args);
-                    }else {
+                    } else {
                         console.log(`Command "${command}" is not defined.`);
                     }
                 }
@@ -54,8 +55,8 @@ export class HahamutBot extends EventEmitter {
 
         this.messagePushUrl = `/messagePush?access_token=${configs.accessToken}`;
         this.imagePushUrl = `/imagePush?bot_id=${configs.botId}&access_token=${configs.accessToken}`;
-        
-        if(isNullOrUndefined(sslOptions)) {
+
+        if (isNullOrUndefined(sslOptions)) {
             this.server = http.createServer();
         } else {
             this.server = https.createServer(sslOptions);
@@ -77,7 +78,7 @@ export class HahamutBot extends EventEmitter {
                         receivedData = null;
                         console.log(error);
                     }
-                    if (self.checkSignature(receivedData, request.headers['x-baha-data-signature']) || !isCheckSignature) {
+                    if (self.checkSignature(receivedData, request.headers['x-baha-data-signature']) || !self.isCheckSignature) {
                         let tempMessage = new ReceivedMessage(self, receivedData.botid, receivedData.time, receivedData.messaging[0].sender_id, receivedData.messaging[0].message);
 
                         if (!isNullOrUndefined(self.prefix)) {
@@ -86,7 +87,7 @@ export class HahamutBot extends EventEmitter {
                             } else {
                                 self.commandTrigger.run();
                             }
-                        }else{
+                        } else {
                             self.emit('message', tempMessage);
                         }
 
@@ -104,7 +105,7 @@ export class HahamutBot extends EventEmitter {
         });
     }
 
-    
+
     boot(port?: number, hostname?: string, backlog?: number, listeningListener?: Function)
     boot(port?: number, hostname?: string, listeningListener?: Function)
     boot(port?: number, backlog?: number, listeningListener?: Function)
@@ -137,19 +138,19 @@ export class HahamutBot extends EventEmitter {
                 url: HAHAMUT_API_HOST + this.messagePushUrl,
                 body: bodyString
             }, (error, response, body: string) => {
-                    if (error) return reject(error);
-                    if (body === 'get data~~' || body === 'event adding' || body.startsWith('-')) {
-                        resolve(body);
-                    }else {
-                        reject(body);
-                    }
+                if (error) return reject(error);
+                if (body === 'get data~~' || body === 'event adding' || body.startsWith('-')) {
+                    resolve(body);
+                } else {
+                    reject(body);
+                }
             });
         });
     }
 
     public addCommand(name: string, run: (...args: any[]) => Promise<any>) {
 
-        this.commands[name === '' ? 'default' : name ] = run;
+        this.commands[name === '' ? 'default' : name] = run;
     }
 
     public uploadImage(imagePath: string): Promise<ImageMessage>
@@ -159,7 +160,7 @@ export class HahamutBot extends EventEmitter {
 
             try {
                 if (typeof (imageData) === 'string') imageData = fs.createReadStream(imageData);
-            } catch(error) {
+            } catch (error) {
                 return reject(error);
             }
 
@@ -202,5 +203,5 @@ export class HahamutBot extends EventEmitter {
             return true;
         }
     }
-    
+
 }
