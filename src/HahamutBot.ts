@@ -23,12 +23,12 @@ export class HahamutBot extends EventEmitter {
     private commands: {} = {};
     private commandTrigger: MessageTrigger;
 
-    constructor(config: { botId: string, accessToken: string, appSecret: string }, sslOptions?: any, prefix?: string, isCheckSignature?: boolean) {
+    constructor(configs: { botId: string, accessToken: string, appSecret: string }, sslOptions?: any, prefix?: string, isCheckSignature?: boolean) {
         super();
 
         const self: HahamutBot = this;
 
-        this.appSecret = config.appSecret;
+        this.appSecret = configs.appSecret;
         isCheckSignature = isNullOrUndefined(isCheckSignature) ? true : isCheckSignature;
         if(!isNullOrUndefined(prefix)) {
             this.prefix = prefix;
@@ -51,8 +51,8 @@ export class HahamutBot extends EventEmitter {
             });
         }
 
-        this.messagePushUrl = `/messagePush?access_token=${config.accessToken}`;
-        this.imagePushUrl = `/imagePush?bot_id=${config.botId}&access_token=${config.accessToken}`;
+        this.messagePushUrl = `/messagePush?access_token=${configs.accessToken}`;
+        this.imagePushUrl = `/imagePush?bot_id=${configs.botId}&access_token=${configs.accessToken}`;
         
         if(isNullOrUndefined(sslOptions)) {
             this.server = http.createServer();
