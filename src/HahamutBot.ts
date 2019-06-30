@@ -103,9 +103,11 @@ export class HahamutBot extends EventEmitter {
         });
     }
 
-    public boot(port: number = 8080, host: string = '0.0.0.0') {
+    public boot(port?: number, host?: string)
+    public boot(path?: string)
+    public boot(...args) {
         try {
-            this.server.listen(port, host);
+            this.server.listen(...args);
             this.emit('ready');
         } catch (error) {
             throw error;
