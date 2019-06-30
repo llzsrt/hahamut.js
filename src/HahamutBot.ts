@@ -103,7 +103,7 @@ export class HahamutBot extends EventEmitter {
         });
     }
 
-    public boot(host: string='localhost', port: number=443) {
+    public boot(port: number = 8080, host: string = '0.0.0.0') {
         try {
             this.server.listen(port, host);
             this.emit('ready');
