@@ -97,12 +97,12 @@ export class MessageTrigger {
         return this.flag;
     }
 
-    public run(...args: any[]): Promise<void> {
+    public run(...args: any[]): Promise<any> {
         return new Promise((resolve, reject) => {
             if (!isNullOrUndefined(this.message)) {
                 if (this.flag) {
                     this.action(this.message, ...args)
-                        .then(() => resolve())
+                        .then(result => resolve(result))
                         .catch(error => reject(error));
                 }
             }else {
@@ -111,7 +111,7 @@ export class MessageTrigger {
         });
     }
 
-    public checkAndRun(message: ReceivedMessage, ...args: any[]): Promise<void> {
+    public checkAndRun(message: ReceivedMessage, ...args: any[]): Promise<any> {
         this.check(message);
         return this.run(...args);
     }
