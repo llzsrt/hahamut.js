@@ -1,4 +1,5 @@
 import fs from 'fs';
+import http from 'http';
 import https from 'https';
 import request from 'request';
 import crypto from 'crypto';
@@ -9,14 +10,14 @@ import { MessageTrigger } from './MessageTrigger';
 import { ReceivedMessage } from './ReceivedMessage';
 import { ReceivedData } from './types/Received';
 import { TextMessage, StickerMessage, ImageMessage } from './types/Message';
-import { MessageTriggerOperator } from './emun/MessageTriggerOperator';
+import { TriggerOperator } from './enums/TriggerOperator';
 
 const HAHAMUT_API_HOST: string = 'https://us-central1-hahamut-8888.cloudfunctions.net';
 
 export class HahamutBot extends EventEmitter {
     public prefix?: string;
     private appSecret: string;
-    private server: https.Server;
+    private server: https.Server | http.Server;
     private messagePushUrl: string;
     private imagePushUrl: string;
     private commands: {} = {};
@@ -33,7 +34,7 @@ export class HahamutBot extends EventEmitter {
             this.prefix = prefix;
             this.commandTrigger = new MessageTrigger({
                 content: this.prefix,
-                operator: MessageTriggerOperator.StartsWith,
+                operator: TriggerOperator.StartsWith,
                 action: async (message: ReceivedMessage) => {
                     const args = message.text.split(' ');
                     args.splice(0,1);
@@ -53,7 +54,12 @@ export class HahamutBot extends EventEmitter {
         this.messagePushUrl = `/messagePush?access_token=${config.accessToken}`;
         this.imagePushUrl = `/imagePush?bot_id=${config.botId}&access_token=${config.accessToken}`;
         
-        this.server = https.createServer(sslOptions);
+        if(isNullOrUndefined(sslOptions)) {
+            this.server = http.createServer();
+        } else {
+            this.server = https.createServer(sslOptions);
+        }
+
         this.server.on('request', (request, response) => {
             if (request.method === 'POST') {
 
@@ -115,9 +121,9 @@ export class HahamutBot extends EventEmitter {
                 headers: { 'Content-Type': 'application/json' },
                 url: HAHAMUT_API_HOST + this.messagePushUrl,
                 body: bodyString
-            }, (error, response, body) => {
+            }, (error, response, body: string) => {
                     if (error) return reject(error);
-                    if (body === 'get data~~') {
+                    if (body === 'get data~~' || body === 'event adding' || body.startsWith('-')) {
                         resolve(body);
                     }else {
                         reject(body);

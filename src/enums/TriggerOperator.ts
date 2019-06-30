@@ -1,4 +1,4 @@
-export enum MessageTriggerOperator {
+export enum TriggerOperator {
     StartsWith,
     EndsWith,
     Contains,
