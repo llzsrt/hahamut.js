@@ -141,7 +141,7 @@ export class HahamutBot extends EventEmitter {
         this.commands[name === '' ? 'default' : name ] = run;
     }
 
-    public uploadImage(imageUrl: string): Promise<ImageMessage>
+    public uploadImage(imagePath: string): Promise<ImageMessage>
     public uploadImage(imageFile: fs.ReadStream): Promise<ImageMessage>
     public uploadImage(imageData: fs.ReadStream | string): Promise<ImageMessage> {
         return new Promise((resolve, reject) => {
